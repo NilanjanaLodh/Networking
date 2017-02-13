@@ -192,5 +192,7 @@ int release_type(int i)
 void setup_routing_table()
 {
 	memcpy(&routing_table[1][1][0],"\x08\x00\x27\xe4\xee\xd6",6);
+	memcpy(&routing_table[1][2][0],"\x08\x00\x27\xA6\xCE\xE7",6);
 	memcpy(&routing_table[2][1][0],"\x08\x00\x27\x52\xa8\xad",6);
+	memcpy(&routing_table[2][2][0],"\x08\x00\x27\x23\x90\xBB",6);
 }

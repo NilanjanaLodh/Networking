@@ -18,14 +18,17 @@ PACKET format
 
 
 **/
+
+/**
 ///change this to user input later
 unsigned char router_mac[] = "\x08\x00\x27\x1c\xe6\x54"; // mac of router
 unsigned char my_ip[2]={1,1}; /// format - {network,host}
+**/
 
-/**
 unsigned char router_mac[] = "\x08\x00\x27\xdd\x6d\x32"; // mac of router .. side 2 
 unsigned char my_ip[2]={2,1}; /// format - {network,host}
-**/
+
+
 unsigned char dest_ip[2];
 
 unsigned char out_packet[MAX_PACK];
@@ -34,7 +37,7 @@ int handle , in_packet_len , i;
 unsigned char in_packet[MAX_PACK];
 unsigned char my_mac[6];
 unsigned char type[]="\xff\xff";
-
+unsigned char local_table[5][6];
 unsigned char broadcast_mac[] = "\xff\xff\xff\xff\xff\xff";
 unsigned char buffer[MAX_BUF];
 int buflen;
@@ -42,6 +45,7 @@ int delimcount=0;
 unsigned char tmp;
 
 
+void set_up_local_table();
 void get_my_mac();
 void fill_packet_headers();
 void fill_msg(unsigned char *msg , int length);
@@ -93,8 +97,10 @@ unsigned short bp, di, si, ds, es, dx, cx, bx, ax, ip, cs, flags;
 
 int main()
 {
+	set_up_local_table();
 	get_my_mac();
 	input_dest_ip();
+
 	fill_packet_headers();
 	access_type();
 	buflen =0;
@@ -147,7 +153,12 @@ void get_my_mac()
 void fill_packet_headers()
 {
 
-	memcpy(out_packet,router_mac, 6); //set the destination mac
+	if(dest_ip[0]==my_ip[0])
+		memcpy(out_packet,local_table[dest_ip[1]],6);
+
+	else
+		memcpy(out_packet,router_mac, 6); //set the destination mac
+	
 	memcpy(out_packet+6, my_mac, 6); //set the source mac
 	memcpy(out_packet+12, type, 2); //set the type
 	memcpy(out_packet+14, dest_ip ,2 );//destination ip
@@ -219,5 +230,18 @@ int input_dest_ip()
 	dest_ip[1]=getchar()-'0';
 	getchar();
 	getchar();
+}
+
+void set_up_local_table()
+{
+	/** network 1
+	memcpy(&local_table[1][0],"\x08\x00\x27\xE4\xEE\xD6",6);
+	memcpy(&local_table[2][0],"\x08\x00\x27\xA6\xCE\xE7",6);
+	**/	
+
+	
+	memcpy(&local_table[1][0],"\x08\x00\x27\x52\xA8\xAD",6);
+	memcpy(&local_table[2][0],"\x08\x00\x27\x23\x90\xBB",6);
+	
 }
 
