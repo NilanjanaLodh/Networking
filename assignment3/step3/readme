@@ -1,0 +1,26 @@
+This is a simple chat program developed at the transport layer.
+
+Users can login and talk to each other using their usernames.
+The server keeps track of who's logging in and routes the message to the correct user
+
+How to run?
+
+Here's an example of how to run on localhost.
+
+
+1. compile both the programs:
+	gcc -pthread -o client client.c
+	gcc -pthread -o server server.c
+
+2. run the server at the desired port (say 6000)
+	./server 6000
+
+3. now run the clients; and enter information as prompted. 
+For instance ,
+./client localhost 6000
+
+Example : 
+Username: nilanjana
+peer's username : trisha
+hi 
+		<< hello!
