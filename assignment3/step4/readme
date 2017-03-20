@@ -1,0 +1,9 @@
+1.Dependencies : 
+		sqlite3
+2. compile :
+		g++ server.cpp -o server -pthread -l sqlite3 
+		gcc client.c -o client -pthread
+
+3.Running :
+	Same as step 3
+	Consult ../step3/readme for details.
