@@ -9,7 +9,7 @@
 
  
 
-#define BUFLEN 512  //Max length of buffer
+#define BUFLEN 516  //Max length of buffer
 #define PORT 69
 static const char* MODE="octet";
 
@@ -51,7 +51,17 @@ struct sockaddr_in serv_addr;
 int sockfd, slen;
 
 void display_help()
-{}
+{
+	printf("SIMPLE TFTP Client\n");
+	printf("\nImplementation by @nilanjanaLodh\n");
+	printf("\n\n**USAGE**\n");
+	printf("put <filename>\n");
+	printf("get <filename>\n");
+	printf("quit\n");
+	printf("help\n");
+	printf("__________\n");
+
+}
 void send_file(char *hostname ,char *filename)
 {
 	FILE *fp;
@@ -64,8 +74,8 @@ void send_file(char *hostname ,char *filename)
 
 
 	/// first send a WRQ to port 69
-	char message[BUFLEN]  , buf[BUFLEN];
-	bzero(message, BUFLEN);
+	char message[516]  , buf[516];
+	bzero(message, 516);
 	message[0]=0x0;
 	message[1]=WRQ; //the WRQ opcode
 	strcpy(message+2, filename);
@@ -94,7 +104,7 @@ void send_file(char *hostname ,char *filename)
 	    if(buf[1]==ERR)
 	    	error("transfer failure");
 
-	    printf("	ACK received.\n");
+	    printf("	ACK received for block number %d.\n", blocknum);
 	    fflush(stdout);
 
 	    blocknum++;
@@ -104,7 +114,7 @@ void send_file(char *hostname ,char *filename)
 		message[3]=blocknum%(0xff+1);
 
     	n = fread(message+4 , 1 , 512 , fp);
-    	printf("%s\n",message+4 );
+    	//printf("%s\n",message+4 );
     	printf("Sending block %d of %d bytes.\n", blocknum,n);
     	if (sendto(sockfd, message, n+4 , 0 , (struct sockaddr *) &reply_addr, addrlen)==-1)
 	    {
@@ -116,7 +126,75 @@ void send_file(char *hostname ,char *filename)
     	if(n<512)
     		break;
     }
-    printf("transfer complete.\n");
+    fclose(fp);
+    printf("Transfer complete.\n");
+
+
+}
+
+void recv_file(char *hostname ,char *filename)
+{
+	FILE *fp;
+	fp = fopen(filename, "a");
+	int filename_len = strlen(filename);
+
+	/// first send a RRQ to port 69
+	char message[516]  , buf[516];
+	bzero(message, BUFLEN);
+	message[0]=0x0;
+	message[1]=RRQ; //the RRQ opcode
+	strcpy(message+2, filename);
+	strcpy(message+2+filename_len+1 , MODE);
+
+	//send RRQ
+	if (sendto(sockfd, message, 516 , 0 , (struct sockaddr *) &serv_addr, slen)==-1)
+    {
+            error("sendto()");
+    }
+    printf("Sent RRQ.\n");
+
+
+    int n;
+    int blocknum=1;
+    struct sockaddr_in reply_addr ;
+    int addrlen= sizeof(reply_addr);
+    while(1)
+    {
+    	bzero(buf,516);
+    	if (recvfrom(sockfd, buf, 516, 0, (struct sockaddr *) &reply_addr, &addrlen) == -1)
+	    {
+	        error("recvfrom()");
+	    }
+
+	    if(buf[1]==ERR)
+	    	error("transfer failure");
+	     
+	    printf("received data : %s\n",buf+4);
+	    n= fwrite(buf+4,1,512,fp);
+
+	    bzero(message, BUFLEN);
+		message[0]=0x0;
+		message[1]=ACK;
+		message[2]=blocknum>>8;
+		message[3]=blocknum%(0xff+1);
+
+		if (sendto(sockfd, message, BUFLEN , 0 , (struct sockaddr *) &reply_addr, addrlen)==-1)
+	    {
+	            error("sendto()");
+	    }    	
+    	printf("Sent ACK for block %d.\n", blocknum);
+		
+		blocknum++;
+	    if(n<512)
+	    {
+	    	break;
+	    }
+
+    }
+    fclose(fp);
+    printf("Transfer complete.\n");
+
+
 
 
 }
@@ -155,6 +233,12 @@ int main(int argc , char **argv)
 		{
 			scanf("%s",filename);
 			send_file(server_hostname, filename);
+		}
+
+		if(strcmp(operation,"get")==0)
+		{
+			scanf("%s",filename);
+			recv_file(server_hostname, filename);
 		}
 
 	}
