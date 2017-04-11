@@ -23,7 +23,16 @@ void error(char *msg)
 }
 int get_sock_fd()
 {
-	int sfd =socket(AF_INET , SOCK_STREAM , 0);
+
+	int sfd =socket(AF_INET , SOCK_STREAM , 0); 
+
+	/**
+	socket()  creates  an  endpoint  for  communication  and returns a file
+       descriptor that refers to that endpoint.
+	**/
+	//AF_INET : IPv4
+	//SOCK_STREAM : TCP
+
 	if(sfd<0)
 		error("Error obtaining socket");
 

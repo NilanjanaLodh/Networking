@@ -16,6 +16,8 @@
 
 #define BUFLEN 516  //Max length of buffer
 #define PORT 69
+#define MAXRETR 5
+
 static const char* MODE="octet";
 
 #define RRQ 1
@@ -60,6 +62,7 @@ void display_help()
 	printf("SIMPLE TFTP Client\n");
 	printf("\nImplementation by @nilanjanaLodh\n");
 	printf("\n\n**USAGE**\n");
+	printf("The available commands are as follows. They all have their usual meainings.\n");
 	printf("put <filename>\n");
 	printf("get <filename>\n");
 	printf("quit\n");
@@ -85,8 +88,9 @@ void send_file(char *hostname ,char *filename)
 	message[1]=WRQ; //the WRQ opcode
 	strcpy(message+2, filename);
 	strcpy(message+2+filename_len+1 , MODE);
+	int req_len=2+strlen(filename)+1+strlen(MODE)+1;
 
-	if (sendto(sockfd, message, BUFLEN , 0 , (struct sockaddr *) &serv_addr, slen)==-1)
+	if (sendto(sockfd, message, req_len , 0 , (struct sockaddr *) &serv_addr, slen)==-1)
     {
             error("sendto()");
     }
@@ -98,16 +102,40 @@ void send_file(char *hostname ,char *filename)
     struct sockaddr_in reply_addr ;
     int addrlen= sizeof(reply_addr);
 
+    int i;
+    int ackblock;
     while(1)
     {
-    	bzero(buf,BUFLEN);
-	    if (recvfrom(sockfd, buf, BUFLEN, 0, (struct sockaddr *) &reply_addr, &addrlen) == -1)
-	    {
-	        error("recvfrom()");
-	    }
+    	for(i=1;i<=MAXRETR;i++)
+    	{
+    		bzero(buf,BUFLEN);
+		    if (recvfrom(sockfd, buf, BUFLEN, 0, (struct sockaddr *) &reply_addr, &addrlen) == -1)
+		    {
+		        error("recvfrom()");
+		    }
+		    ackblock = (buf[2]<<8) + buf[3];
 
-	    if(buf[1]==ERR)
-	    	error("transfer failure");
+		    if((buf[1]==ERR) || (ackblock==(blocknum-1)))
+		    {
+		    	printf("Error sending blocknum, trying  again.%d\n", blocknum);
+		    	if (sendto(sockfd, message, BUFLEN , 0 , (struct sockaddr *) &serv_addr, slen)==-1)
+			    {
+			            error("sendto()");
+			    }
+
+		    }
+
+		    
+
+		    else
+		    	break;
+    	}
+    	if(i>MAXRETR)
+    		{
+    			printf("Giving up on sending file. :( \n" );
+    			return ;
+    		}
+    	
 
 	    printf("	ACK received for block number %d.\n", blocknum);
 	    fflush(stdout);
@@ -221,6 +249,17 @@ int main(int argc , char **argv)
     slen=sizeof(serv_addr);
     sockfd = get_sock_fd();
     fill_struct(server_hostname, 69 , &serv_addr , slen);
+    struct timeval timeout;      
+    timeout.tv_sec = 10;
+    timeout.tv_usec = 0;
+
+    if (setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
+                sizeof(timeout)) < 0)
+        error("setsockopt failed\n");
+
+    if (setsockopt (sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout,
+                sizeof(timeout)) < 0)
+        error("setsockopt failed\n");
 
 
 	char operation[100] , filename[200];

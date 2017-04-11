@@ -1,6 +1,3 @@
-/**single client , single server**/
-/** they can continuosly chat with each other **/
-// This way :
 
 
 #include <stdio.h>
@@ -42,7 +39,7 @@ int get_sock_fd()
 
 void bind_socket(int sockfd , int portno)
 {
-	//The IP adddress is implicitly the IP address of the host machine
+	//The IP adddress is implicitly the IP address(es) of the host machine
 	struct sockaddr_in serv_addr ;
 	bzero((char*) &serv_addr , sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
